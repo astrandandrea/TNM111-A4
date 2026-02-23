@@ -71,6 +71,7 @@ function drawNetwork(svgId, filePath) {
             .attr("stroke", "#999")
             .attr("stroke-width", d => Math.sqrt(d.value) * 0.5)
 
+            // TOOLTIP FÖR LÄNKAR
             .append("title")
             .text(d =>
                 nodes[d.source.index].name +
