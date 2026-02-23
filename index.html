@@ -1,47 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Star WArs Interactions</title> 
-
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-
+    <title>Star Wars Interactions</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 
 <body>
 
-    <div id="title-container">
-        <img src="titletext.png" alt="Star Wars Interactions" id="title-image">
+    <div class="header">
+        <img src="titletext.png" alt="Star Wars Interactions Title">
     </div>
 
-    <!-- drop down meny för att välja olika episoder -->
-    <div id="controls">
-        <label for="episodeSelect">Select Episode:</label>
-        <select id="episodeSelect">
-            <option value="all">All Interactions</option>
-            <option value="1">Episode 1</option>
-            <option value="2">Episode 2</option>
-            <option value="3">Episode 3</option>
-            <option value="4">Episode 4</option>
-            <option value="5">Episode 5</option>
-            <option value="6">Episode 6</option>
-            <option value="7">Episode 7</option>
-        </select>
+    <div class="container">
+
+        <!-- vänster -->
+        <div class="panel">
+            <label>Select Episode (Left):</label>
+            <select id="select1"></select>
+            <svg id="view1" width="700" height="600"></svg>
+        </div>
+
+        <!-- höger -->
+        <div class="panel">
+            <label>Select Episode (Right):</label>
+            <select id="select2"></select>
+            <svg id="view2" width="700" height="600"></svg>
+        </div>
+
     </div>
-
-    <svg id="network" width="1000" height="800">
-        <g class="links"></g>
-        <g class="nodes"></g>
-    </svg>
-
 
     <script src="main.js"></script>
 
-    
-
 </body>
 </html>
-
