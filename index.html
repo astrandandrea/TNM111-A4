@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Star WArs Interactions</title> 
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -17,7 +17,25 @@
         <img src="titletext.png" alt="Star Wars Interactions" id="title-image">
     </div>
 
-    <div id="network"></div>
+    <!-- drop down meny för att välja olika episoder -->
+    <div id="controls">
+        <label for="episodeSelect">Select Episode:</label>
+        <select id="episodeSelect">
+            <option value="all">All Interactions</option>
+            <option value="1">Episode 1</option>
+            <option value="2">Episode 2</option>
+            <option value="3">Episode 3</option>
+            <option value="4">Episode 4</option>
+            <option value="5">Episode 5</option>
+            <option value="6">Episode 6</option>
+            <option value="7">Episode 7</option>
+        </select>
+    </div>
+
+    <svg id="network" width="1000" height="800">
+        <g class="links"></g>
+        <g class="nodes"></g>
+    </svg>
 
     <script src="main.js"></script>
 

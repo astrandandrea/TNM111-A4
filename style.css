@@ -7,3 +7,13 @@
     max-width: 800px;
     width: 90%;
 }
+
+#controls {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#episodeSelect {
+    padding: 5px 10px;
+    font-size: 14px;
+}
