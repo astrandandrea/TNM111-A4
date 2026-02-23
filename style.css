@@ -1,0 +1,9 @@
+#title-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#title-image {
+    max-width: 800px;
+    width: 90%;
+}
