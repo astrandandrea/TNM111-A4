@@ -50,3 +50,18 @@ svg {
     justify-content: space-between;
     margin: 0 80px;
 }
+.tooltip {
+    position: fixed;
+    background-color: rgba(50, 50, 50, 0.95);
+    color: white;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    min-width: 160px;
+    z-index: 1000;
+}

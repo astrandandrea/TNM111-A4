@@ -16,6 +16,8 @@ let updateView2 = null;
 let globalThreshold = 1;
 let hideIsolated = false;
 
+const tooltip = d3.select("#tooltip");
+
 //  dropdowns
 function setupDropdown(selectId, svgId) {
 
@@ -105,28 +107,46 @@ function drawNetwork(svgId, filePath) {
                 .data(remappedLinks)
                 .join("line")
                 .attr("stroke", "#999")
-                .attr("stroke-width", d => Math.sqrt(d.value) * 0.5);
-
-            link.append("title")
-                .text(d =>
-                    filteredNodes[d.source.index].name +
-                    " – " +
-                    filteredNodes[d.target.index].name +
-                    "\nScenes: " + d.value
-                );
+                .attr("stroke-width", d => Math.sqrt(d.value) * 0.5)
+                .on("mouseover", function(event, d) {
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`
+                            <strong>${filteredNodes[d.source.index].name}</strong> – ${filteredNodes[d.target.index].name}<br>
+                            Scenes: ${d.value}
+                        `);
+                })
+                .on("mousemove", function(event) {
+                    tooltip
+                        .style("left", (event.pageX + 15) + "px")
+                        .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
 
             const node = nodeLayer.selectAll("circle")
                 .data(filteredNodes)
                 .join("circle")
                 .attr("r", d => 4 + Math.sqrt(d.value))
                 .attr("fill", d => d.colour)
-                .style("cursor", "pointer");
-
-            node.append("title")
-                .text(d =>
-                    d.name +
-                    "\nScenes: " + d.value
-                );
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    tooltip
+                        .style("opacity", 1)
+                        .html(`
+                            <strong>${d.name}</strong><br>
+                            Scenes: ${d.value}
+                        `);
+                })
+                .on("mousemove", function(event) {
+                    tooltip
+                        .style("left", (event.pageX + 15) + "px")
+                        .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
 
             node.on("click", function(event, d) {
 
@@ -152,16 +172,15 @@ function drawNetwork(svgId, filePath) {
             });
         }
 
-        // spara update-funktion
         if (svgId === "#view1") {
             updateView1 = update;
         } else {
             updateView2 = update;
         }
-        // initial render
+
         update(globalThreshold, hideIsolated);
     });
-} 
+}
 
 d3.select("#edgeSlider").on("input", function() {
     globalThreshold = +this.value;
@@ -178,7 +197,6 @@ function applyGlobalFilter() {
     if (updateView1) updateView1(globalThreshold, hideIsolated);
     if (updateView2) updateView2(globalThreshold, hideIsolated);
 }
-
 
 setupDropdown("#select1", "#view1");
 setupDropdown("#select2", "#view2");
