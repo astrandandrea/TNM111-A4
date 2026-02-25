@@ -47,11 +47,11 @@ function drawNetwork(svgId, filePath) {
         // skapar zoom 
         const zoomGroup = svg.append("g");
 
-        // Zoom behavior
+        // zoom behavior
         const zoom = d3.zoom()
-            .scaleExtent([0.1, 5])  // min zoom, max zoom
+            .scaleExtent([0.1, 5])  
             .on("zoom", (event) => {
-        zoomGroup.attr("transform", event.transform);
+                zoomGroup.attr("transform", event.transform);
           });
 
 svg.call(zoom);
