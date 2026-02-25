@@ -44,8 +44,20 @@ function drawNetwork(svgId, filePath) {
 
         svg.selectAll("*").remove();
 
-        const linkLayer = svg.append("g");
-        const nodeLayer = svg.append("g");
+        // skapar zoom 
+        const zoomGroup = svg.append("g");
+
+        // Zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 5])  // min zoom, max zoom
+            .on("zoom", (event) => {
+        zoomGroup.attr("transform", event.transform);
+          });
+
+svg.call(zoom);
+
+        const linkLayer = zoomGroup.append("g");
+        const nodeLayer = zoomGroup.append("g");
 
         const simulation = d3.forceSimulation(nodes)
 
