@@ -10,6 +10,11 @@ const fileMap = {
 };
 
 let selectedCharacter = null;
+let updateView1 = null;
+let updateView2 = null;
+
+let globalThreshold = 1;
+let hideIsolated = false;
 
 //  dropdowns
 function setupDropdown(selectId, svgId) {
@@ -31,12 +36,14 @@ function setupDropdown(selectId, svgId) {
 }
 
 // graf
+let networks = []; // sparar båda nätverken
+
 function drawNetwork(svgId, filePath) {
 
     d3.json(filePath).then(data => {
 
-        const nodes = data.nodes;
-        const links = data.links;
+        const originalNodes = data.nodes;
+        const originalLinks = data.links;
 
         const svg = d3.select(svgId);
         const width = svg.node().clientWidth;
@@ -44,105 +51,132 @@ function drawNetwork(svgId, filePath) {
 
         svg.selectAll("*").remove();
 
-        // skapar zoom 
         const zoomGroup = svg.append("g");
 
-        // zoom behavior
         const zoom = d3.zoom()
-            .scaleExtent([0.1, 5])  
+            .scaleExtent([0.1, 5])
             .on("zoom", (event) => {
                 zoomGroup.attr("transform", event.transform);
-          });
+            });
 
-svg.call(zoom);
+        svg.call(zoom);
 
         const linkLayer = zoomGroup.append("g");
         const nodeLayer = zoomGroup.append("g");
 
-        const simulation = d3.forceSimulation(nodes)
-
-            .force("link",
-                d3.forceLink(links)
-                  .id((d,i) => i)
-                  .distance(30)
-            )
-
+        const simulation = d3.forceSimulation()
+            .force("link", d3.forceLink().distance(30))
             .force("charge", d3.forceManyBody().strength(-40))
-
             .force("center", d3.forceCenter(width/2, height/2))
+            .force("collision", d3.forceCollide().radius(8));
 
-            .force("collision", d3.forceCollide().radius(8))
+        function update(threshold, hideIsolated) {
 
-            .on("tick", ticked);
+            const filteredLinks = originalLinks.filter(l => l.value >= threshold);
 
+            const connected = new Set();
+            filteredLinks.forEach(l => {
+                connected.add(l.source);
+                connected.add(l.target);
+            });
 
-        // rita lnjer
-        const link = linkLayer.selectAll("line")
-            .data(links)
-            .join("line")
-            .attr("stroke", "#999")
-            .attr("stroke-width", d => Math.sqrt(d.value) * 0.5)
+            const filteredNodes = hideIsolated
+                ? originalNodes.filter((n, i) => connected.has(i))
+                : originalNodes;
 
-            // TOOLTIP FÖR LÄNKAR
-            .append("title")
-            .text(d =>
-                nodes[d.source.index].name +
-                " – " +
-                nodes[d.target.index].name +
-                "\nScenes: " + d.value
-            );
+            const indexMap = new Map();
+            filteredNodes.forEach((n, i) => {
+                indexMap.set(originalNodes.indexOf(n), i);
+            });
 
-        // rita noder
-        const node = nodeLayer.selectAll("circle")
-            .data(nodes)
-            .join("circle")
-            .attr("r", d => 4 + Math.sqrt(d.value))
-            .attr("fill", d => d.colour)
+            const remappedLinks = filteredLinks
+                .filter(l => indexMap.has(l.source) && indexMap.has(l.target))
+                .map(l => ({
+                    source: indexMap.get(l.source),
+                    target: indexMap.get(l.target),
+                    value: l.value
+                }));
 
-            .append("title")
-            .text(d =>
-                d.name +
-                "\nScenes: " + d.value
-            );
+            simulation.nodes(filteredNodes);
+            simulation.force("link").links(remappedLinks);
+            simulation.alpha(1).restart();
 
+            const link = linkLayer.selectAll("line")
+                .data(remappedLinks)
+                .join("line")
+                .attr("stroke", "#999")
+                .attr("stroke-width", d => Math.sqrt(d.value) * 0.5);
 
-        const circles = nodeLayer.selectAll("circle");
-
-        // brush + link vid klick
-        circles.on("click", function(event, d) {
-
-            selectedCharacter = d.name;
-
-            // Markera noder i båda grafer
-            d3.selectAll("circle")
-                .classed("highlight", node =>
-                    node.name === selectedCharacter
+            link.append("title")
+                .text(d =>
+                    filteredNodes[d.source.index].name +
+                    " – " +
+                    filteredNodes[d.target.index].name +
+                    "\nScenes: " + d.value
                 );
-        });
 
+            const node = nodeLayer.selectAll("circle")
+                .data(filteredNodes)
+                .join("circle")
+                .attr("r", d => 4 + Math.sqrt(d.value))
+                .attr("fill", d => d.colour)
+                .style("cursor", "pointer");
 
-        function ticked() {
+            node.append("title")
+                .text(d =>
+                    d.name +
+                    "\nScenes: " + d.value
+                );
 
-            linkLayer.selectAll("line")
-                .attr("x1", d => d.source.x)
-                .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
-        
-            circles
-                .attr("cx", d => {
-                    const r = 4 + Math.sqrt(d.value);
-                    d.x = Math.max(r, Math.min(width - r, d.x));
-                    return d.x;
-                })
-                .attr("cy", d => {
-                    const r = 4 + Math.sqrt(d.value);
-                    d.y = Math.max(r, Math.min(height - r, d.y));
-                    return d.y;
-                });
+            node.on("click", function(event, d) {
+
+                selectedCharacter = d.name;
+
+                d3.selectAll("circle")
+                    .classed("highlight", node =>
+                        node.name === selectedCharacter
+                    );
+            });
+
+            simulation.on("tick", () => {
+
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+            });
         }
 
+        // spara update-funktion
+        if (svgId === "#view1") {
+            updateView1 = update;
+        } else {
+            updateView2 = update;
+        }
+        // initial render
+        update(globalThreshold, hideIsolated);
     });
+} 
+
+d3.select("#edgeSlider").on("input", function() {
+    globalThreshold = +this.value;
+    d3.select("#edgeValue").text(globalThreshold);
+    applyGlobalFilter();
+});
+
+d3.select("#hideIsolated").on("change", function() {
+    hideIsolated = this.checked;
+    applyGlobalFilter();
+});
+
+function applyGlobalFilter() {
+    if (updateView1) updateView1(globalThreshold, hideIsolated);
+    if (updateView2) updateView2(globalThreshold, hideIsolated);
 }
 
 

@@ -39,3 +39,14 @@ svg {
     stroke: red;
     stroke-width: 3px;
 }
+
+.global-controls {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 80px;
+}
