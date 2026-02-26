@@ -23,11 +23,11 @@ function setupDropdown(selectId, svgId) {
 
     const select = d3.select(selectId);
 
-    Object.keys(fileMap).forEach(key => {
-        select.append("option")
-            .attr("value", key)
-            .text(key === "all" ? "All Episodes" : "Episode " + key);
-    });
+   ["all", "1", "2", "3", "4", "5", "6", "7"].forEach(key => {
+    select.append("option")
+        .attr("value", key)
+        .text(key === "all" ? "All Episodes" : "Episode " + key);
+});
 
     select.on("change", function() {
         const file = fileMap[this.value];
