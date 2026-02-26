@@ -18,7 +18,7 @@ let hideIsolated = false;
 
 const tooltip = d3.select("#tooltip");
 
-//  dropdowns
+// dropdowns
 function setupDropdown(selectId, svgId) {
 
     const select = d3.select(selectId);
@@ -38,8 +38,6 @@ function setupDropdown(selectId, svgId) {
 }
 
 // graf
-let networks = []; // sparar båda nätverken
-
 function drawNetwork(svgId, filePath) {
 
     d3.json(filePath).then(data => {
@@ -69,94 +67,19 @@ function drawNetwork(svgId, filePath) {
         const simulation = d3.forceSimulation()
             .force("link", d3.forceLink().distance(30))
             .force("charge", d3.forceManyBody().strength(-40))
-            .force("center", d3.forceCenter(width/2, height/2))
+            .force("center", d3.forceCenter(width / 2, height / 2))
             .force("collision", d3.forceCollide().radius(8));
 
         function update(threshold, hideIsolated) {
 
-            const filteredLinks = originalLinks.filter(l => l.value >= threshold);
+            const { nodes, links } = filterData(originalNodes, originalLinks, threshold, hideIsolated);
 
-            const connected = new Set();
-            filteredLinks.forEach(l => {
-                connected.add(l.source);
-                connected.add(l.target);
-            });
-
-            const filteredNodes = hideIsolated
-                ? originalNodes.filter((n, i) => connected.has(i))
-                : originalNodes;
-
-            const indexMap = new Map();
-            filteredNodes.forEach((n, i) => {
-                indexMap.set(originalNodes.indexOf(n), i);
-            });
-
-            const remappedLinks = filteredLinks
-                .filter(l => indexMap.has(l.source) && indexMap.has(l.target))
-                .map(l => ({
-                    source: indexMap.get(l.source),
-                    target: indexMap.get(l.target),
-                    value: l.value
-                }));
-
-            simulation.nodes(filteredNodes);
-            simulation.force("link").links(remappedLinks);
+            simulation.nodes(nodes);
+            simulation.force("link").links(links);
             simulation.alpha(1).restart();
 
-            const link = linkLayer.selectAll("line")
-                .data(remappedLinks)
-                .join("line")
-                .attr("stroke", "#999")
-                .attr("stroke-width", d => Math.sqrt(d.value) * 0.5)
-                .on("mouseover", function(event, d) {
-                    tooltip
-                        .style("opacity", 1)
-                        .html(`
-                            <strong>${filteredNodes[d.source.index].name}</strong> – ${filteredNodes[d.target.index].name}<br>
-                            Scenes: ${d.value}
-                        `);
-                })
-                .on("mousemove", function(event) {
-                    tooltip
-                        .style("left", (event.pageX + 15) + "px")
-                        .style("top", (event.pageY - 20) + "px");
-                })
-                .on("mouseout", function() {
-                    tooltip.style("opacity", 0);
-                });
-
-            const node = nodeLayer.selectAll("circle")
-                .data(filteredNodes)
-                .join("circle")
-                .attr("r", d => 4 + Math.sqrt(d.value))
-                .attr("fill", d => d.colour)
-                .style("cursor", "pointer")
-                .on("mouseover", function(event, d) {
-                    tooltip
-                        .style("opacity", 1)
-                        .html(`
-                            <strong>${d.name}</strong><br>
-                            Scenes: ${d.value}
-                        `);
-                })
-                .on("mousemove", function(event) {
-                    tooltip
-                        .style("left", (event.pageX + 15) + "px")
-                        .style("top", (event.pageY - 20) + "px");
-                })
-                .on("mouseout", function() {
-                    tooltip.style("opacity", 0);
-                });
-
-            node.on("click", function(event, d) {
-
-                selectedCharacter = d.name;
-
-                d3.selectAll("circle")
-                    .classed("highlight", node =>
-                        node.name === selectedCharacter
-                    );
-            });
+            const link = renderLinks(linkLayer, links, nodes);
+            const node = renderNodes(nodeLayer, nodes);
 
             simulation.on("tick", () => {
 
@@ -180,6 +103,97 @@ function drawNetwork(svgId, filePath) {
 
         update(globalThreshold, hideIsolated);
     });
+}
+
+function filterData(originalNodes, originalLinks, threshold, hideIsolated) {
+
+    const filteredLinks = originalLinks.filter(l => l.value >= threshold);
+
+    const connected = new Set();
+    filteredLinks.forEach(l => {
+        connected.add(l.source);
+        connected.add(l.target);
+    });
+
+    const filteredNodes = hideIsolated
+        ? originalNodes.filter((n, i) => connected.has(i))
+        : originalNodes;
+
+    const indexMap = new Map();
+    filteredNodes.forEach((n, i) => {
+        indexMap.set(originalNodes.indexOf(n), i);
+    });
+
+    const remappedLinks = filteredLinks
+        .filter(l => indexMap.has(l.source) && indexMap.has(l.target))
+        .map(l => ({
+            source: indexMap.get(l.source),
+            target: indexMap.get(l.target),
+            value: l.value
+        }));
+
+    return {
+        nodes: filteredNodes,
+        links: remappedLinks
+    };
+}
+
+function renderLinks(layer, links, nodes) {
+
+    return layer.selectAll("line")
+        .data(links)
+        .join("line")
+        .attr("stroke", "#999")
+        .attr("stroke-width", d => Math.sqrt(d.value) * 0.5)
+        .on("mouseover", (event, d) => {
+            tooltip
+                .style("opacity", 1)
+                .html(`
+                    <strong>${nodes[d.source.index].name}</strong> –
+                    ${nodes[d.target.index].name}<br>
+                    Scenes: ${d.value}
+                `);
+        })
+        .on("mousemove", (event) => {
+            tooltip
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", () => {
+            tooltip.style("opacity", 0);
+        });
+}
+
+function renderNodes(layer, nodes) {
+
+    return layer.selectAll("circle")
+        .data(nodes)
+        .join("circle")
+        .attr("r", d => 4 + Math.sqrt(d.value))
+        .attr("fill", d => d.colour)
+        .style("cursor", "pointer")
+        .on("mouseover", (event, d) => {
+            tooltip
+                .style("opacity", 1)
+                .html(`<strong>${d.name}</strong><br>Scenes: ${d.value}`);
+        })
+        .on("mousemove", (event) => {
+            tooltip
+                .style("left", (event.pageX + 15) + "px")
+                .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", () => {
+            tooltip.style("opacity", 0);
+        })
+        .on("click", (event, d) => {
+
+            selectedCharacter = d.name;
+
+            d3.selectAll("circle")
+                .classed("highlight", node =>
+                    node.name === selectedCharacter
+                );
+        });
 }
 
 d3.select("#edgeSlider").on("input", function() {
